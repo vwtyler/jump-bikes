@@ -121,3 +121,4 @@ Your final paper should be much the same format as a peer-reviewed journal paper
 
 * Conclusion and discussion. Provide a summary of what you have learned about your research question along with the EDA/statistical results that support your conclusions. Also critique your own methods and provide suggestions for improving your analysis. Issues pertaining to the reliability and validity of your data, and appropriateness of the analysis approach should be discussed here. A paragraph on what you would do differently if you were able to start over with the project or what you would do next if you were going to continue work on the project should also be included.
 
+blahblahblah
