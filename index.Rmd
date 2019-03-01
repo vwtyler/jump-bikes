@@ -1,0 +1,123 @@
+---
+title: "Jump Bikes in Sacramento"
+author: "Tyler Jackson, Ryan Miller, Mitchell Snyder"
+date: "2/22/2019"
+output:
+  html_document:
+    theme: journal
+    code_folding: show
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidycensus)
+census_api_key("9c132628caf60947e2e0a7457b8744d69bd1eee0", overwrite = TRUE, install = TRUE) #for tinycensus
+```
+
+```{r eval=FALSE}
+#read in the data
+
+nov_jump <- read.csv("./data/sac_rides_nov.csv")
+
+str(nov_jump)
+# the given data
+
+#12,13 14,15
+head(nov_jump[, 12:13])
+library(sf)
+
+start_coord <- nov_jump[,13:12]
+end_coord <- nov_jump[,15:14]
+
+colnames(start_coord) <- c("lon", "lat")
+colnames(end_coord) <- c("lon", "lat")
+
+# https://stackoverflow.com/questions/20531066/convert-begin-and-end-coordinates-into-spatial-lines-in-r
+head(start_coord)
+# Create list of simple feature geometries (linestrings)
+l_sf <- vector("list", nrow(nov_jump))
+for (i in seq_along(l_sf)){
+  l_sf[[i]] <- st_linestring(as.matrix(rbind(start_coord[i, ], end_coord[i, ])))
+}
+# Create simple feature geometry list column
+l_sfc <- st_sfc(l_sf, crs = "+proj=longlat +datum=WGS84")
+
+library(mapview)
+
+
+#create sf points for analysis
+start.sf <- st_as_sf(x = start_coord[!is.na(start_coord$lat),], 
+                        coords = c("lon", "lat"),
+                        crs = "+proj=longlat +datum=WGS84")
+
+end.sf <- st_as_sf(x = end_coord[!is.na(end_coord$lat),], 
+                        coords = c("lon", "lat"),
+                        crs = "+proj=longlat +datum=WGS84")
+
+#mapview(start.sf, col.regions = "red") + end.sf + l_sfc
+
+#add in jump bike data to point files
+#later
+
+v16 <- load_variables(2016, "acs5", cache = TRUE)
+#View(v16)
+#get acs data for ca 
+ca.tracts <- get_acs(geography = "tract", 
+              year = 2016,
+              variables = c(nhwhite = "B03002_003", 
+                            nhblk = "B03002_004", 
+                            nhasn = "B03002_006", 
+                            nhisp = "B03002_012",
+                            medincome = "B19013_001", 
+                            totp = "B01003_001",
+                            tothhs = "B11001_001"), 
+              state = "CA",
+              survey = "acs5",
+              geometry = TRUE)
+```
+
+# Do jump bike origins and destinations happen in socio-economic enclaves in Sacramento?
+
+Need origin / point data and census data for sacramento: need to decide which SES variable from census -> attach to point data
+
+## Autocorrelation
+
+Are there clusters in the Jump bike use? Are they located in enclaves?
+
+## Origin / Destination point access buffers
+
+Who has access to jump bikes? 
+
+## Spatial modelling
+
+GWR
+
+# Do jump bike origins / destinations tend towards specific types of land use / zoning?
+
+## Buffers / Zoning
+
+Need to bring in zoning data and understand the zoning, how do we assess the neighbors?
+
+## Modeling? does it make sense ie do zoning types influence jump bike ridership?
+
+# Does weather / timing impact Jump bike ridership?
+
+## Similar to the airplane data
+
+compare ridership to Wind, air quality, temperature, percipitation
+
+## is correlation? Modeling?
+
+
+#Paper Guidelines
+Your final paper should be much the same format as a peer-reviewed journal paper. Typically final papers run 15-18 pages including tables and figures (single-spaced). If you can get everything across in 10 solid pages, that's great. The general format of the final product should follow this outline:
+
+* 1. Brief introduction and overview of the literature you have reviewed. I do not expect you to have a deep knowledge of the literature, but you should have identified some driving questions that emerge from the literature. State your objectives/hypotheses clearly at the end of the introduction/lit review
+* 2. Methods. Give a clear and detailed summary of your data and methods
+
+* 3. Results. Describe your results. Make sure sure you label all tables and figures.
+
+* 4. Conclusion and discussion. Provide a summary of what you have learned about your research question along with the EDA/statistical results that support your conclusions. Also critique your own methods and provide suggestions for improving your analysis. Issues pertaining to the reliability and validity of your data, and appropriateness of the analysis approach should be discussed here. A paragraph on what you would do differently if you were able to start over with the project or what you would do next if you were going to continue work on the project should also be included.
+
