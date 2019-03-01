@@ -13,6 +13,7 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidycensus)
+library(tidyverse)
 census_api_key("9c132628caf60947e2e0a7457b8744d69bd1eee0", overwrite = TRUE, install = TRUE) #for tinycensus
 ```
 
@@ -48,36 +49,55 @@ library(mapview)
 
 
 #create sf points for analysis
-start.sf <- st_as_sf(x = start_coord[!is.na(start_coord$lat),], 
+start_sf <- st_as_sf(x = start_coord[!is.na(start_coord$lat),], 
                         coords = c("lon", "lat"),
                         crs = "+proj=longlat +datum=WGS84")
 
-end.sf <- st_as_sf(x = end_coord[!is.na(end_coord$lat),], 
+end_sf <- st_as_sf(x = end_coord[!is.na(end_coord$lat),], 
                         coords = c("lon", "lat"),
                         crs = "+proj=longlat +datum=WGS84")
 
-#mapview(start.sf, col.regions = "red")
+#mapview(start_sf, col.regions = "red") + end_sf
 
 #add in jump bike data to point files
 #later
 
-v16 <- load_variables(2016, "acs5", cache = TRUE)
+#v16 <- load_variables(2017, "acs5", cache = TRUE)
 #View(v16)
 #get acs data for ca 
-ca.tracts <- get_acs(geography = "tract", 
-              year = 2016,
+ca_tracts <- get_acs(geography = "tract", 
+              year = 2017,
               variables = c(nhwhite = "B03002_003", 
                             nhblk = "B03002_004", 
                             nhasn = "B03002_006", 
                             nhisp = "B03002_012",
                             medincome = "B19013_001", 
-                            totp = "B01003_001",
-                            tothhs = "B11001_001"), 
+                            totpop = "B01003_001",
+                            totpov = "B17001_002",
+                            incpercap ="B19301_001"), 
               state = "CA",
               survey = "acs5",
               geometry = TRUE)
 
-head(ca.tracts)
+names(ca_tracts)
+
+#tidy up ca.tracts
+ca_tracts <- ca_tracts %>%
+  select(GEOID, NAME, variable, estimate, geometry) %>%
+  spread(key = variable, value = estimate)
+
+#create pop percentrage variables
+ca_tracts <- mutate(ca.tracts, 
+       pwht = nhwhite/totpop, 
+       pasn   = nhasn/totpop, 
+       pblk   = nhblk/totpop, 
+       phisp    = nhisp/totpop, 
+       ppov     = totpov/totpop)
+
+#filter by county
+jump_tracts <- ca_tracts %>%
+  filter(str_detect(NAME, "Yolo|Sacramento*"))
+
 ```
 
 # Do jump bike origins and destinations happen in socio-economic enclaves in Sacramento?
