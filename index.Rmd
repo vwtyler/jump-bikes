@@ -22,8 +22,9 @@ library(r2d3maps)
 library(ggmap)
 library(lubridate)
 library(ggthemes)
-census_api_key("9c132628caf60947e2e0a7457b8744d69bd1eee0", overwrite = TRUE, install = TRUE) #for tinycensus
-register_google(key = "AIzaSyCiRtI91wGVQH7Yn2dynoJulxVO2RxgALk")
+library(cartogram)
+library(tmap)
+
 ```
 
 ```{r}
@@ -222,16 +223,34 @@ nov_jump <- merge(nov_jump, start_sf,
      #          maptype = "terrain",
       #         zoom = 13)
 
-#get ride counts in tracts
+#get start ride counts in tracts
 ride_in_tract <- st_join(start_sf, jump_tracts, join = st_within)
 
 ride_count <- count(as_tibble(ride_in_tract), GEOID.x) %>%
   rename(GEOID = GEOID.x, start_count = n) %>%
   print()
 
+jump_tracts <- left_join(jump_tracts, ride_count)
+
+#get end ride counts in tracts
+ride_in_tract <- st_join(end_sf, jump_tracts, join = st_within)
+
+ride_count <- count(as_tibble(ride_in_tract), GEOID) %>%
+  rename(GEOID = GEOID, start_count = n) %>%
+  print()
+
 #merge counts
 jump_tracts <- left_join(jump_tracts, ride_count)
 
+ggplot(jump_tracts) + 
+  geom_point(aes(ppov, tot_rides))
+
+jump_tracts <- st_transform(jump_tracts, crs = 6418)
+jump_cart <- cartogram_ncont(jump_tracts, "ppov")
+
+tm_shape(jump_cart) + tm_polygons("totpov")
+
+tm_shape(jump_tracts) + tm_polygons("totpov")
 ``` 
 
 ## D3
