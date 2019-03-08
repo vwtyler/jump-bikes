@@ -192,7 +192,7 @@ nov_jump %>%
   group_by(start_day) %>%
   summarise(rides = length(week))
 
-# we are missing days of data :(
+# we are missing days of data the 8th and the 14th :(
 
 #check projection for the start_sf and the jump_tracts
 st_crs(start_sf)
@@ -236,7 +236,7 @@ jump_tracts <- left_join(jump_tracts, ride_count)
 
 ## D3
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 
 d3_map(shape = jump_tracts, stroke_col = "#585858") %>%
   add_tooltip(value = "{NAME}: {n}") %>% 

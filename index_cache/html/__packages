@@ -1,10 +1,4 @@
 base
-methods
-datasets
-utils
-grDevices
-graphics
-stats
 tidycensus
 tidyverse
 ggplot2
@@ -19,3 +13,6 @@ mapview
 sf
 scales
 r2d3maps
+ggmap
+lubridate
+ggthemes
