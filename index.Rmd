@@ -13,10 +13,20 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidycensus)
+options(tigris_use_cache = TRUE)
+library(tidyverse)
+library(mapview)
+library(sf)
+library(scales)
+library(r2d3maps)
+library(ggmap)
+library(lubridate)
+library(ggthemes)
 census_api_key("9c132628caf60947e2e0a7457b8744d69bd1eee0", overwrite = TRUE, install = TRUE) #for tinycensus
+register_google(key = "AIzaSyCiRtI91wGVQH7Yn2dynoJulxVO2RxgALk")
 ```
 
-```{r eval=FALSE}
+```{r}
 #read in the data
 
 nov_jump <- read.csv("./data/sac_rides_nov.csv")
@@ -24,18 +34,22 @@ nov_jump <- read.csv("./data/sac_rides_nov.csv")
 str(nov_jump)
 # the given data
 
-#12,13 14,15
-head(nov_jump[, 12:13])
-library(sf)
 
+head(nov_jump[, 12:13]) #12,13 14,15
+
+
+#select start and end coords into dfs to use later
 start_coord <- nov_jump[,13:12]
 end_coord <- nov_jump[,15:14]
 
 colnames(start_coord) <- c("lon", "lat")
 colnames(end_coord) <- c("lon", "lat")
 
+
+# create linestring sf to map (we can also do this in ggplot without an sf)
 # https://stackoverflow.com/questions/20531066/convert-begin-and-end-coordinates-into-spatial-lines-in-r
-head(start_coord)
+
+
 # Create list of simple feature geometries (linestrings)
 l_sf <- vector("list", nrow(nov_jump))
 for (i in seq_along(l_sf)){
@@ -44,38 +58,194 @@ for (i in seq_along(l_sf)){
 # Create simple feature geometry list column
 l_sfc <- st_sfc(l_sf, crs = "+proj=longlat +datum=WGS84")
 
-library(mapview)
+
 
 
 #create sf points for analysis
-start.sf <- st_as_sf(x = start_coord[!is.na(start_coord$lat),], 
+start_sf <- st_as_sf(x = start_coord[!is.na(start_coord$lat),], 
                         coords = c("lon", "lat"),
                         crs = "+proj=longlat +datum=WGS84")
 
-end.sf <- st_as_sf(x = end_coord[!is.na(end_coord$lat),], 
+end_sf <- st_as_sf(x = end_coord[!is.na(end_coord$lat),], 
                         coords = c("lon", "lat"),
                         crs = "+proj=longlat +datum=WGS84")
 
-#mapview(start.sf, col.regions = "red") + end.sf + l_sfc
+#the sf doesn't have more than just geometry so I put the lat/long back in to use as a join column
+start_sf$lat <- start_coord$lat
+start_sf$lon <- start_coord$lon
+#mapview(start_sf, col.regions = "red") + end_sf
 
-#add in jump bike data to point files
-#later
+```
 
-v16 <- load_variables(2016, "acs5", cache = TRUE)
+
+#Load Census Data
+```{r cache = TRUE}
+# don't mess with this chunk unless we're adding more census data
+#v16 <- load_variables(2017, "acs5", cache = TRUE)
 #View(v16)
 #get acs data for ca 
-ca.tracts <- get_acs(geography = "tract", 
-              year = 2016,
+ca_tracts <- get_acs(geography = "tract", 
+              year = 2017,
               variables = c(nhwhite = "B03002_003", 
                             nhblk = "B03002_004", 
                             nhasn = "B03002_006", 
                             nhisp = "B03002_012",
                             medincome = "B19013_001", 
-                            totp = "B01003_001",
-                            tothhs = "B11001_001"), 
+                            totpop = "B01003_001",
+                            totpov = "B17001_002",
+                            incpercap ="B19301_001"), 
               state = "CA",
               survey = "acs5",
-              geometry = TRUE)
+              geometry = TRUE,
+              cache_table = TRUE)
+
+names(ca_tracts)
+
+#tidy up ca.tracts
+ca_tracts <- ca_tracts %>%
+  select(GEOID, NAME, variable, estimate, geometry) %>%
+  spread(key = variable, value = estimate)
+
+#create pop percentrage variables
+ca_tracts <- mutate(ca_tracts, 
+       pwht = nhwhite/totpop, 
+       pasn   = nhasn/totpop, 
+       pblk   = nhblk/totpop, 
+       phisp    = nhisp/totpop, 
+       ppov     = totpov/totpop)
+
+#filter by county
+jump_tracts <- ca_tracts %>%
+  filter(str_detect(NAME, "Yolo|Sacramento*"))
+
+#now set this chunk to cache and don't touch!
+```
+
+# exploring maps
+## let's go on a date
+```{r}
+#make a day/time variable for lubridate to do some graphing
+nov_jump$start_dt <- mdy_hms(paste(nov_jump$date_start,
+                                   nov_jump$time_start), 
+                             tz = "America/Los_Angeles", 
+                             locale = Sys.getlocale("LC_TIME"))
+
+#differentiate weekend from weekday rides
+nov_jump$start_day_type <- ifelse(wday(nov_jump$start_dt, 
+                                       week_start = 1) > 5,
+                                  "Weekend", "Weekday")
+nov_jump$mm <- hour(nov_jump$start_dt)*60 + 
+  minute(nov_jump$start_dt)
+
+nov_jump$week <- as.factor(week(nov_jump$start_dt))
+
+
+nov_jump$start_day <- wday(nov_jump$start_dt, 
+                           label = TRUE, 
+                           abbr = FALSE, 
+                           week_start = 1)
+```
+
+## play with plots
+```{r}
+#view start times by weekend/weekday
+ggplot(nov_jump, aes(x= mm, fill = week)) + 
+  geom_density(alpha=.6) +
+  scale_x_continuous(labels = c("5am","8am","12:30pm","5pm","8pm"),
+                     breaks = c(300,480,750,1020,1200)) + 
+  labs(fill="",title="Jump Bike Nov 2018 Start Times") + 
+  theme_fivethirtyeight() +
+  theme(strip.background = element_rect(fill = "#FFFFFF")) +
+  facet_grid(vars(start_day_type)) + 
+  scale_fill_viridis_d(option="A")
+
+
+#get freq per week
+by_week <- nov_jump %>%
+  group_by(week) %>%
+  summarise(rides = length(eventType))
+
+#plot it
+ggplot(by_week) +
+  geom_point(aes(x = week, y = rides))
+
+#get freq per day for each week
+
+nov_jump %>%
+  group_by(week) %>%
+  filter(week == "44") %>%
+  select("start_day") %>% 
+  group_by(start_day) %>%
+  summarise(rides = length(week))
+
+nov_jump %>%
+  group_by(week) %>%
+  filter(week == "45") %>%
+  select("start_day") %>% 
+  group_by(start_day) %>%
+  summarise(rides = length(week))
+
+nov_jump %>%
+  group_by(week) %>%
+  filter(week == "46") %>%
+  select("start_day") %>% 
+  group_by(start_day) %>%
+  summarise(rides = length(week))
+
+# we are missing days of data the 8th and the 14th :(
+
+#check projection for the start_sf and the jump_tracts
+st_crs(start_sf)
+
+st_crs(jump_tracts)
+
+#make them the same for joining
+jump_tracts <- st_transform(jump_tracts, crs = 4326)
+
+#join together (spatial join)
+start_sf <- st_join(start_sf, jump_tracts, 
+                    suffix = c(".start", ".start"), left = TRUE)
+
+#merge tract census data with jump bike data
+nov_jump <- merge(nov_jump, start_sf, 
+                  by.x = "start_long", 
+                  by.y = "lon", 
+                  suffix = c(".start", ".start"), 
+                  all.x = TRUE)
+
+#this code gets a pretty map for using ggmap
+#sac <- get_map(location = c(left= min(start_coord$lon), 
+ #                           bottom = min(start_coord$lat), 
+  #                          right = max(start_coord$lon), 
+   #                         top = max(start_coord$lat)),
+    #           source = "stamen",
+     #          maptype = "terrain",
+      #         zoom = 13)
+
+#get ride counts in tracts
+ride_in_tract <- st_join(start_sf, jump_tracts, join = st_within)
+
+ride_count <- count(as_tibble(ride_in_tract), GEOID.x) %>%
+  rename(GEOID = GEOID.x, start_count = n) %>%
+  print()
+
+#merge counts
+jump_tracts <- left_join(jump_tracts, ride_count)
+
+``` 
+
+## D3
+
+```{r eval=FALSE, include=FALSE}
+
+d3_map(shape = jump_tracts, stroke_col = "#585858") %>%
+  add_tooltip(value = "{NAME}: {n}") %>% 
+  add_continuous_gradient2(low = muted("blue"), 
+                           high = muted("red"), 
+                           var = "n", range = c(0, 5500)) %>% 
+  add_legend(title = "Poverty Rate by Tract") %>% 
+  add_labs(title = "Yolo and Sacramento Counties",
+    caption = "Source: ACS 2017 5 Year Estimates")
 ```
 
 # Do jump bike origins and destinations happen in socio-economic enclaves in Sacramento?
