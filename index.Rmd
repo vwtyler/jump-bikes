@@ -242,6 +242,9 @@ ride_count <- count(as_tibble(ride_in_tract), GEOID) %>%
 #merge counts
 jump_tracts <- left_join(jump_tracts, ride_count)
 
+```
+
+```{r} 
 ggplot(jump_tracts) + 
   geom_point(aes(ppov, tot_rides))
 
@@ -252,6 +255,46 @@ tm_shape(jump_cart) + tm_polygons("totpov")
 
 tm_shape(jump_tracts) + tm_polygons("totpov")
 ``` 
+
+
+#land use data
+```{r}
+#get land use data 
+unzip(zipfile = "./data/Parcels.zip", exdir = "./data")
+
+sac_parcels <- st_read("./data/Parcels.shp")
+
+head(sac_parcels)
+
+levels(sac_parcels$LU_GENERAL)
+st_crs(jump_tracts)
+
+#set proper crs
+sac_parcels <- st_transform(sac_parcels, 6418)
+sac_parcels_int <- st_intersection(sac_parcels, jump_tracts)
+
+
+sac_parcels_agg <- aggregate(LU_SPECIF ~ GEOID + LU_GENERAL,
+                             sac_parcels_int, FUN = length)
+sac_parcels_agg <- sac_parcels_agg %>% 
+  spread(key = LU_GENERAL, value = LU_SPECIF) %>%
+  replace(is.na(.), 0)
+
+sac_parcels_agg$sumpar <- rowSums(sac_parcels_agg[,-1])
+
+jump_tracts <- left_join(jump_tracts, sac_parcels_agg)
+
+jump_tracts <- jump_tracts %>%
+  mutate(resRate = Residential/sumpar, retRate = `Retail / Commercial`/sumpar)
+names(jump_tracts)
+#is it neccesary to do this?
+#sapply(sac_parcels$LU_GENERAL, switch, "Agriculture" = 1, "Care / Health" = 2, "Church / Welfare" = 3, "Industrial" = 4, "Miscellaneous" = 5, "Office" = 6, "Public / Utilities" = 7, "Recreational" = 8, "Residential" = 9, "Retail / Commercial" = 10, "Vacant" = 11, USE.NAMES = F)
+```
+
+```{r}
+ggplot(jump_tracts) +
+  geom_point(aes(retRate, start_count))
+```
 
 ## D3
 
