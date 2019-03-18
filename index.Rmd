@@ -24,7 +24,10 @@ library(lubridate)
 library(ggthemes)
 library(cartogram)
 library(tmap)
-
+library(magrittr)
+library(data.table)
+library(jtools)
+library(kableExtra)
 ```
 
 ```{r}
@@ -74,6 +77,9 @@ end_sf <- st_as_sf(x = end_coord[!is.na(end_coord$lat),],
 #the sf doesn't have more than just geometry so I put the lat/long back in to use as a join column
 start_sf$lat <- start_coord$lat
 start_sf$lon <- start_coord$lon
+
+end_sf$lat <- end_coord$lat
+end_sf$lon <- end_coord$lon
 #mapview(start_sf, col.regions = "red") + end_sf
 
 ```
@@ -132,8 +138,7 @@ nov_jump$start_dt <- mdy_hms(paste(nov_jump$date_start,
                              locale = Sys.getlocale("LC_TIME"))
 
 #differentiate weekend from weekday rides
-nov_jump$start_day_type <- ifelse(wday(nov_jump$start_dt, 
-                                       week_start = 1) > 5,
+nov_jump$start_day_type <- ifelse(wday(nov_jump$start_dt) > 5,
                                   "Weekend", "Weekday")
 nov_jump$mm <- hour(nov_jump$start_dt)*60 + 
   minute(nov_jump$start_dt)
@@ -141,10 +146,7 @@ nov_jump$mm <- hour(nov_jump$start_dt)*60 +
 nov_jump$week <- as.factor(week(nov_jump$start_dt))
 
 
-nov_jump$start_day <- wday(nov_jump$start_dt, 
-                           label = TRUE, 
-                           abbr = FALSE, 
-                           week_start = 1)
+nov_jump$start_day <- wday(nov_jump$start_dt)
 ```
 
 ## play with plots
@@ -154,7 +156,8 @@ ggplot(nov_jump, aes(x= mm, fill = week)) +
   geom_density(alpha=.6) +
   scale_x_continuous(labels = c("5am","8am","12:30pm","5pm","8pm"),
                      breaks = c(300,480,750,1020,1200)) + 
-  labs(fill="",title="Jump Bike Nov 2018 Start Times") + 
+  labs(fill="", title="Jump Bike Nov 2018 Start Times", 
+       subtitle = "by Week") + 
   theme_fivethirtyeight() +
   theme(strip.background = element_rect(fill = "#FFFFFF")) +
   facet_grid(vars(start_day_type)) + 
@@ -224,6 +227,8 @@ nov_jump <- merge(nov_jump, start_sf,
       #         zoom = 13)
 
 #get start ride counts in tracts
+jump_tracts <- st_transform(jump_tracts, crs = 6418)
+start_sf <- st_transform(start_sf, 6418)
 ride_in_tract <- st_join(start_sf, jump_tracts, join = st_within)
 
 ride_count <- count(as_tibble(ride_in_tract), GEOID.x) %>%
@@ -233,14 +238,18 @@ ride_count <- count(as_tibble(ride_in_tract), GEOID.x) %>%
 jump_tracts <- left_join(jump_tracts, ride_count)
 
 #get end ride counts in tracts
+end_sf <- st_transform(end_sf, 6418)
 ride_in_tract <- st_join(end_sf, jump_tracts, join = st_within)
 
 ride_count <- count(as_tibble(ride_in_tract), GEOID) %>%
-  rename(GEOID = GEOID, start_count = n) %>%
+  rename(GEOID = GEOID, end_count = n) %>%
   print()
 
 #merge counts
 jump_tracts <- left_join(jump_tracts, ride_count)
+
+jump_tracts <- jump_tracts %>%
+  mutate(tot_rides = start_count + end_count)
 
 ```
 
@@ -251,9 +260,8 @@ ggplot(jump_tracts) +
 jump_tracts <- st_transform(jump_tracts, crs = 6418)
 jump_cart <- cartogram_ncont(jump_tracts, "ppov")
 
-tm_shape(jump_cart) + tm_polygons("totpov")
+#tm_shape(jump_cart) + tm_polygons("totpov")
 
-tm_shape(jump_tracts) + tm_polygons("totpov")
 ``` 
 
 
@@ -285,7 +293,7 @@ sac_parcels_agg$sumpar <- rowSums(sac_parcels_agg[,-1])
 jump_tracts <- left_join(jump_tracts, sac_parcels_agg)
 
 jump_tracts <- jump_tracts %>%
-  mutate(resRate = Residential/sumpar, retRate = `Retail / Commercial`/sumpar)
+  mutate(resRate = Residential/sumpar, retRate = `Retail / Commercial`/sumpar, riderate = tot_rides/totpop, offrate = Office/sumpar)
 names(jump_tracts)
 #is it neccesary to do this?
 #sapply(sac_parcels$LU_GENERAL, switch, "Agriculture" = 1, "Care / Health" = 2, "Church / Welfare" = 3, "Industrial" = 4, "Miscellaneous" = 5, "Office" = 6, "Public / Utilities" = 7, "Recreational" = 8, "Residential" = 9, "Retail / Commercial" = 10, "Vacant" = 11, USE.NAMES = F)
@@ -294,24 +302,101 @@ names(jump_tracts)
 ```{r}
 ggplot(jump_tracts) +
   geom_point(aes(retRate, start_count))
+
+ggplot(jump_tracts) +
+  geom_point(aes(resRate, start_count))
 ```
 
 ## D3
 
 ```{r eval=FALSE, include=FALSE}
-
+jump_tracts <- st_transform(jump_tracts, 4326)
 d3_map(shape = jump_tracts, stroke_col = "#585858") %>%
-  add_tooltip(value = "{NAME}: {n}") %>% 
+  add_tooltip(value = "{NAME}: {riderate}") %>% 
   add_continuous_gradient2(low = muted("blue"), 
                            high = muted("red"), 
-                           var = "n", range = c(0, 5500)) %>% 
+                           var = "riderate", range = c(0, 5)) %>% 
   add_legend(title = "Poverty Rate by Tract") %>% 
   add_labs(title = "Yolo and Sacramento Counties",
     caption = "Source: ACS 2017 5 Year Estimates")
 ```
 
-# Do jump bike origins and destinations happen in socio-economic enclaves in Sacramento?
+```{r}
+names(jump_tracts)
 
+  
+pairs(riderate ~ offrate + resRate + retRate + ppov + pwht, jump_tracts)
+
+jump_lm <- lm(riderate ~ offrate + resRate + retRate + ppov + pwht + pasn + pblk + phisp, jump_tracts)
+summary(jump_lm)
+
+summ(jump_lm)
+```
+
+```{r}
+mapview(jump_tracts, zcol = "ppov")
+```
+
+Make a heatmat?
+```{r eval=FALSE, include=FALSE}
+
+heatmap.start_end <- list()
+heatmap.start_end$start <- start_sf %>% 
+  group_by(lon, lat) %>%
+  summarize(intensity = sqrt(n()))
+names(heatmap.start_end$start)[1:2] <- c("longitude","latitude")
+ 
+heatmap.start_end$end <- end_sf %>%
+  group_by(lon, lat) %>%
+  summarize(intensity = sqrt(n()))
+names(heatmap.start_end$end)[1:2] <- c("longitude","latitude")
+ 
+heatmap.start_end$start$pos <- "Start"
+heatmap.start_end$end$pos <- "End"
+ 
+heatmap.start_end %<>% rbindlist(fill = T)
+
+```
+
+```{r eval=FALSE, include=FALSE}
+library(leaflet)
+library(leaflet.extras)
+leaflet(heatmap.start_end) %>% 
+  addProviderTiles(providers$CartoDB) %>%
+  addHeatmap(data = heatmap.start_end %>% filter(pos=="Start"),
+             lng=~longitude, 
+             lat=~latitude, 
+             intensity = ~intensity,
+             blur = 10, 
+             max = 100, radius = 15,
+             layerId = "Start", group = "Start") %>%
+  addHeatmap(data = heatmap.start_end %>% filter(pos=="End"),
+             lng=~longitude, 
+             lat=~latitude, 
+             intensity = ~intensity,
+             blur = 10, 
+             max = 100, radius = 15,
+             layerId = "End", group = "End") %>%
+  addLayersControl(
+    baseGroups = c("Start","End"),
+    options = layersControlOptions(collapsed = FALSE)
+  )
+```
+
+
+```{r}
+tmap_mode("view")
+tm_shape(jump_tracts) + tm_polygons("ppov")
+
+tmap_mode("view")
+tm_shape(jump_tracts) + tm_polygons("retRate")
+
+tmap_mode("view")
+tm_shape(jump_tracts) + tm_polygons("riderate")
+```
+
+# Do jump bike origins and destinations happen in socio-economic enclaves in Sacramento? 
+ 
 Need origin / point data and census data for sacramento: need to decide which SES variable from census -> attach to point data
 
 ## Autocorrelation
