@@ -18,7 +18,7 @@ library(tidyverse)
 library(mapview)
 library(sf)
 library(scales)
-library(r2d3maps)
+#library(r2d3maps)
 library(ggmap)
 library(lubridate)
 library(ggthemes)
@@ -331,6 +331,9 @@ jump_lm <- lm(riderate ~ offrate + resRate + retRate + ppov + pwht + pasn + pblk
 summary(jump_lm)
 
 summ(jump_lm)
+
+par(mfrow=c(2,2))
+plot(jump_lm)
 ```
 
 ```{r}
@@ -436,5 +439,16 @@ Your final paper should be much the same format as a peer-reviewed journal paper
 
 * Results. Describe your results. Make sure sure you label all tables and figures.
 
-* Conclusion and discussion. Provide a summary of what you have learned about your research question along with the EDA/statistical results that support your conclusions. Also critique your own methods and provide suggestions for improving your analysis. Issues pertaining to the reliability and validity of your data, and appropriateness of the analysis approach should be discussed here. A paragraph on what you would do differently if you were able to start over with the project or what you would do next if you were going to continue work on the project should also be included.
+These are our results, these are our plotted residuals:
+```{r echo=FALSE}
+par(mfrow=c(2,2))
+plot(jump_lm)
+```
+
+
+* Conclusion and discussion. Provide a summary of what you have learned about your research question along with the EDA/statistical results that support your conclusions. 
+
+* Also critique your own methods and provide suggestions for improving your analysis. Issues pertaining to the reliability and validity of your data, and appropriateness of the analysis approach should be discussed here. 
+
+* A paragraph on what you would do differently if you were able to start over with the project or what you would do next if you were going to continue work on the project should also be included.
 
