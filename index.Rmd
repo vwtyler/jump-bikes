@@ -436,6 +436,9 @@ Your final paper should be much the same format as a peer-reviewed journal paper
 
 * Brief introduction and overview of the literature you have reviewed. I do not expect you to have a deep knowledge of the literature, but you should have identified some driving questions that emerge from the literature. State your objectives/hypotheses clearly at the end of the introduction/lit review
 * Methods. Give a clear and detailed summary of your data and methods
+```{r}
+
+```
 
 * Results. Describe your results. Make sure sure you label all tables and figures.
 
@@ -451,4 +454,63 @@ plot(jump_lm)
 * Also critique your own methods and provide suggestions for improving your analysis. Issues pertaining to the reliability and validity of your data, and appropriateness of the analysis approach should be discussed here. 
 
 * A paragraph on what you would do differently if you were able to start over with the project or what you would do next if you were going to continue work on the project should also be included.
+
+#Paper
+
+Bike Sharing Systems (BSS) have become increasingly viable options for transportation in the built environment. BSS provide bicycles to consumers across urban areas (typically in hubs called “stations”) on an as-needed basis, allowing commuters and leisure-seekers to ride for a small fee without the downsides (initial cost, maintenance, storage, etc,) of bike ownership (Rixey, 2013; Smith et al. 2015). In addition to environmental and health benefits of BSS, many programs market these systems to connect “first and last mile” commuters, connecting people to transit hubs, work, or city centers (Smith et al. 2015). A relatively recent *newcomer* to the United States, Bike Sharing Systems have grown rapidly since 2012, due in part to technology constraints of bicycles and urban infrastructure built to accommodate heavy bicycle use. Numerous technological and logistical improvements to BSS have helped current “fourth-generation” services like JUMP bikes to grow in popularity among urban populations (Smith et al. 2015).
+As the number and quality of Bike Sharing Services have increased over time, so too have concerns of inequity linked to these programs (McNeil et al 2018). Put simply, the economic and logistical prerogative to maximize profit and centralize BSS hubs has resulted in the clustering of services in and around city centers—centers that cater to a predominately white, middle- or upper-class user. While acknowledging the complex and varied role of politics, race, and class play in shaping the built environment, the scope of this project will determine whether BSS usage is linked to socio-economic enclaves. 
+
+To that end, this project closely analyzed Goodman and Handy’s 2015 report “Providing Equitable Access to Sacramento’s Bike Share System” to gain a critical framework for our data analysis. Tellingly, Goodman and Handy find that “Contemporary ridership forecasting models for bike share are based on current patterns of bicycle use, and generally assume a negative correlation between ridership and prevalence of non-white population, though these rates may be due to other factors such as poor infrastructure or blight rather than the LIM [Low Income Minority] residents themselves.” (Goodman and Handy, 2015; brackets added). The timing of the report (2015) prior to the implementation of the JUMP bikes in May of 2018 make our data set from November 2018 a good predictor of user trends, allowing for a six month adjustment/learning period. Whereas Goodman and Handy set out to “explore how system equity barriers could be removed to that all residents … could enjoy the benefits of bike share” this report sets out to analyze the correlation between socio-economic status (ses) and JUMP bike ridership to see if matches with industry trends (Goodman and Handy, 2015). Our null hypothesis is that JUMP bike users in Sacramento WILL/ WILL NOT conform to the general trend that favors users from higher socio-economic enclaves
+
+
+Paper Guidelines
+Your final paper should be much the same format as a peer-reviewed journal paper. Typically final papers run 15-18 pages including tables and figures (single-spaced). If you can get everything across in 10 solid pages, that's great. The general format of the final product should follow this outline:
+* Brief introduction and overview of the literature you have reviewed. I do not expect you to have a deep knowledge of the literature, but you should have identified some driving questions that emerge from the literature. State your objectives/hypotheses clearly at the end of the introduction/lit review
+
+* Methods. Give a clear and detailed summary of your data and methods
+•	Got census data (2017 AM COM SURV) and jump bike data (nov 2018) and	 Land use data from Sac county (2018ish?)
+•	Merged datasets together
+•	Stats of Jmp bike data for trends by time of day and week day weekend use
+•	Saw patterns that implicated commuter use
+•	 Use trip locations (start and end) as proxy for the user, layered in neighborhood census data to code
+•	Built mult regression model to test ridership against numerous variables (including hypothesis for LIM folks)
+* Results. Describe your results. Make sure you label all tables and figures.
+•	On separate part (with Tyler) Figures
+o	Graph across time
+o	Correlation table
+o	Maps of variables 
+	Ride rate
+	Retail rate
+	Poverty/ses
+o	Heat map 
+o	Regression output
+o	Plot of residuals
+•	Result of our regression shows that there is no link between LIM status and ridership (within the 2 week period)
+
+* Conclusion and discussion. Provide a summary of what you have learned about your research question along with the Exploratory Data Analysis/statistical results that support your conclusions. 
+•	Understood temporality
+•	Suggested we could talk about commute patterns 
+o	Learned using tract demograpics as a proxy for ridership does not establish a correlation between rdrship and demographic variables
+Also critique your own methods and provide suggestions for improving your analysis. Issues pertaining to the reliability and validity of your data, and appropriateness of the analysis approach should be discussed here.
+•	More time on dependent variables for nghbrhd characteristics
+•	More stat testing more than OLS regression
+o	Plus gwr/ running tests for multicollinearity heteroscedasticity 
+ A paragraph on what you would do differently if you were able to start over with the project or what you would do next if you were going to continue work on the project should also be included.
+We need a ridership level survey
+•	GET MOER DATA.
+•	Conduct ridership survey (cant make the overlying assumptions that we did in this class) 
+•	Work with a data magician (statistician) 
+
+
+
+REFERENCES:
+
+Goodman, B and Handy, S. 2015. Providing Equitable Access to Sacramento’s Bike Share System. U.C. Davis Institute of Transportation Studies.
+
+Rixey, A. 2013. Station-Level Forecasting of Bike Sharing Ridership: Station Network Effects in Three U.S. Systems. TRB 2013 Annual Meeting.
+
+Smith, C.S., Oh, J., Lei, C. 2015. Exploring the Equity Dimensions of U.S. Bicycle Sharing Systems. Transportation Research Center for Livable Communities. 
+
+United States Census Bureau (2010). 2010 California Census Data. Retrieved from: http://quickfacts.census.gov/qfd/states/06/0664000.html
+
 
