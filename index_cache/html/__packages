@@ -1,4 +1,10 @@
 base
+methods
+datasets
+utils
+grDevices
+graphics
+stats
 tidycensus
 tidyverse
 ggplot2
@@ -12,7 +18,13 @@ forcats
 mapview
 sf
 scales
-r2d3maps
 ggmap
 lubridate
 ggthemes
+cartogram
+tmap
+magrittr
+data.table
+jtools
+kableExtra
+bindrcpp

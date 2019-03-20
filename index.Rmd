@@ -1,7 +1,7 @@
 ---
-title: "Jump Bikes in Sacramento"
+title: "Bikeshare Justice: Is JUMP Bike Usage Equitable in Sacramento?"
 author: "Tyler Jackson, Ryan Miller, Mitchell Snyder"
-date: "2/22/2019"
+date: "3/19/2019"
 output:
   html_document:
     theme: journal
@@ -30,7 +30,7 @@ library(jtools)
 library(kableExtra)
 ```
 
-```{r}
+```{r include=FALSE}
 #read in the data
 
 nov_jump <- read.csv("./data/sac_rides_nov.csv")
@@ -85,8 +85,10 @@ end_sf$lon <- end_coord$lon
 ```
 
 
+
+```{r cache=TRUE, include=FALSE}
 #Load Census Data
-```{r cache = TRUE}
+
 # don't mess with this chunk unless we're adding more census data
 #v16 <- load_variables(2017, "acs5", cache = TRUE)
 #View(v16)
@@ -128,9 +130,12 @@ jump_tracts <- ca_tracts %>%
 #now set this chunk to cache and don't touch!
 ```
 
+
+```{r include=FALSE}
 # exploring maps
 ## let's go on a date
-```{r}
+
+
 #make a day/time variable for lubridate to do some graphing
 nov_jump$start_dt <- mdy_hms(paste(nov_jump$date_start,
                                    nov_jump$time_start), 
@@ -149,8 +154,10 @@ nov_jump$week <- as.factor(week(nov_jump$start_dt))
 nov_jump$start_day <- wday(nov_jump$start_dt)
 ```
 
+
+```{r include=FALSE}
 ## play with plots
-```{r}
+
 #view start times by weekend/weekday
 ggplot(nov_jump, aes(x= mm, fill = week)) + 
   geom_density(alpha=.6) +
@@ -253,7 +260,7 @@ jump_tracts <- jump_tracts %>%
 
 ```
 
-```{r} 
+```{r include=FALSE} 
 ggplot(jump_tracts) + 
   geom_point(aes(ppov, tot_rides))
 
@@ -265,8 +272,7 @@ jump_cart <- cartogram_ncont(jump_tracts, "ppov")
 ``` 
 
 
-#land use data
-```{r}
+```{r include=FALSE}
 #get land use data 
 unzip(zipfile = "./data/Parcels.zip", exdir = "./data")
 
@@ -299,7 +305,7 @@ names(jump_tracts)
 #sapply(sac_parcels$LU_GENERAL, switch, "Agriculture" = 1, "Care / Health" = 2, "Church / Welfare" = 3, "Industrial" = 4, "Miscellaneous" = 5, "Office" = 6, "Public / Utilities" = 7, "Recreational" = 8, "Residential" = 9, "Retail / Commercial" = 10, "Vacant" = 11, USE.NAMES = F)
 ```
 
-```{r}
+```{r include=FALSE}
 ggplot(jump_tracts) +
   geom_point(aes(retRate, start_count))
 
@@ -307,9 +313,10 @@ ggplot(jump_tracts) +
   geom_point(aes(resRate, start_count))
 ```
 
-## D3
 
 ```{r eval=FALSE, include=FALSE}
+## D3
+
 jump_tracts <- st_transform(jump_tracts, 4326)
 d3_map(shape = jump_tracts, stroke_col = "#585858") %>%
   add_tooltip(value = "{NAME}: {riderate}") %>% 
@@ -321,7 +328,8 @@ d3_map(shape = jump_tracts, stroke_col = "#585858") %>%
     caption = "Source: ACS 2017 5 Year Estimates")
 ```
 
-```{r}
+
+```{r include=FALSE}
 names(jump_tracts)
 
   
@@ -336,12 +344,15 @@ par(mfrow=c(2,2))
 plot(jump_lm)
 ```
 
-```{r}
+
+```{r include=FALSE}
 mapview(jump_tracts, zcol = "ppov")
 ```
 
-Make a heatmat?
+
 ```{r eval=FALSE, include=FALSE}
+
+#Make a heatmap?
 
 heatmap.start_end <- list()
 heatmap.start_end$start <- start_sf %>% 
@@ -387,7 +398,7 @@ leaflet(heatmap.start_end) %>%
 ```
 
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 tmap_mode("view")
 tm_shape(jump_tracts) + tm_polygons("ppov")
 
@@ -398,114 +409,214 @@ tmap_mode("view")
 tm_shape(jump_tracts) + tm_polygons("riderate")
 ```
 
-# Do jump bike origins and destinations happen in socio-economic enclaves in Sacramento? 
- 
-Need origin / point data and census data for sacramento: need to decide which SES variable from census -> attach to point data
-
-## Autocorrelation
-
-Are there clusters in the Jump bike use? Are they located in enclaves?
-
-## Origin / Destination point access buffers
-
-Who has access to jump bikes? 
-
-## Spatial modelling
-
-GWR
-
-# Do jump bike origins / destinations tend towards specific types of land use / zoning?
-
-## Buffers / Zoning
-
-Need to bring in zoning data and understand the zoning, how do we assess the neighbors?
-
-## Modeling? does it make sense ie do zoning types influence jump bike ridership?
-
-# Does weather / timing impact Jump bike ridership?
-
-## Similar to the airplane data
-
-compare ridership to Wind, air quality, temperature, percipitation
-
-## is correlation? Modeling?
+#INTROUCTION AND LITERATURE REVIEW
 
 
-#Paper Guidelines
-Your final paper should be much the same format as a peer-reviewed journal paper. Typically final papers run 15-18 pages including tables and figures (single-spaced). If you can get everything across in 10 solid pages, that's great. The general format of the final product should follow this outline:
+Bike Sharing Systems (BSS) have become increasingly viable options for transportation in the built environment. BSS provide bicycles to consumers across urban areas on an as-needed basis, allowing commuters and leisure-seekers to ride for a small fee without the downsides (initial cost, maintenance, storage, etc,) of bike ownership (Rixey, 2013; Smith et al. 2015). In addition to environmental and health benefits of BSS, many programs market these systems to connect "first and last mile" commuters, connecting people to transit hubs, work, or city centers (Smith et al. 2015). A relatively recent phenomenon in the United States, Bike Sharing Systems have grown rapidly since 2012. Numerous technological and logistical improvements to BSS have helped current "fourth-generation"" services like JUMP bikes to grow in popularity among urban populations (Smith et al. 2015).
+As the number and quality of Bike Sharing Services have increased over time, so too have concerns of inequity linked to these programs (McNeil et al 2018). Put simply, the economic and logistical prerogative to maximize profit and centralize BSS hubs has resulted in the clustering of services in and around city centers - centers that cater to a predominately white, middle- or upper-class user. While acknowledging the complex and varied role of politics, race, and class play in shaping the built environment, the scope of this project will determine whether BSS usage is linked to socio-economic enclaves here in Sacramento. 
 
-* Brief introduction and overview of the literature you have reviewed. I do not expect you to have a deep knowledge of the literature, but you should have identified some driving questions that emerge from the literature. State your objectives/hypotheses clearly at the end of the introduction/lit review
-* Methods. Give a clear and detailed summary of your data and methods
-```{r}
+To that end, this project closely analyzed Goodman and Handy's 2015 report "Providing Equitable Access to Sacramento's Bike Share Systems" to gain a critical framework for our data analysis. Tellingly, Goodman and Handy find that "contemporary ridership forecasting models for bike share are based on current patterns of bicycle use, and generally assume a negative correlation between ridership and prevalence of non-white population, though these rates may be due to other factors such as poor infrastructure or blight rather than the LIM [Low Income Minority] residents themselves." (Goodman and Handy, 2015; brackets added). The timing of the report (2015) prior to the implementation of the JUMP bikes in May of 2018 make our data set from November 2018 a good predictor of user trends, allowing for a six month adjustment/learning period. Whereas Goodman and Handy set out to "explore how system equity barriers could be removed to that all residents... ...could enjoy the benefits of bike share" this report sets out to analyze the correlation between socio-economic status (SES) and JUMP bike ridership to see if our own system matches with industry trends (Goodman and Handy, 2015). Our hypothesis is that JUMP bike usage in Sacramento conforms to the general trend that favors users from higher socio-economic enclaves.
+
+
+
+#METHODS
+
+In order to understand our data and test our research question, we conducted an exploratory data analysis, merged in two additional datasets, and finally produced a multivariate regression model to test our hypothesis. This section breaks out each of those tasks into subheadings, starting below.
+
+
+##Exploratory Data Analysis
+
+Simple summary statistics of our input dataset show that our data contains 24,193 observations, which are individual JUMP bike trips, each with 23 variables including starting and ending locations and times, trip duration, and even bicycle battery status. The observations were collected between November 1, 2018, and November 15, 2018, and according to the provider of the dataset, represent the full universe of point-to-point JUMP bike trips conducted in Sacramento and West Sacramento over those dates.
+
+
+### Mapping JUMP Ridership
+
+As a team of geographers, logically one of the first steps in our exploratory data analysis was making our data spatial. Each observation in the dataset has a coordinate for the trip start point and the trip end point, so a logical way to visualize this information is to see both of these coordinates as points on a map. The spatial information embedded in these coordinates is also critically useful in allowing us to bring in other datasets through spatial joins. Using the "sf" package, we were able to create two point visualizations of our observations: one for the starting coordinates and one for the ending coordinates, shown in the interactive map below.  
+
+```{r Report - start and end point map, echo=FALSE}
+mapview(start_sf, col.regions = "red") + end_sf
 
 ```
 
-* Results. Describe your results. Make sure sure you label all tables and figures.
+**Figure 1. JUMP Ridership Start and End Points, Nov 1-15, 2018.**
 
-These are our results, these are our plotted residuals:
+
+This map establishes a spatial pattern of clustering around Downtown Sacramento, with a large percentage of trips either starting or ending in the Downtown and Midtown neighborhoods, generally bounded by Interstate 5 to the West, US Highway 50 to the South, Interstate 80 Business to the East, and the Union Pacific Railroad tracks to the north. This map, combined with some of the explanatory variables used in the Goodman and Handy paper, were instrumental in helping us specify our regression model (explained further in a later section).
+
+
+### Understanding Ridership Temporality
+
+Next, we wished to understand the temporality of our JUMP ridership numbers. In order to test our research hypothesis, we wanted to make sure that there were perceptible patterns of people using JUMP bikes at peak commute periods, indicating that some riders are using the service to travel to work as opposed to travelling for recreation. In order to do that, we graphed ridership across the time of day for each week covered by our time period, and seperated the ridership graphs out between weeekdays and weekends.
+
+```{r Report - time of day plot, echo=FALSE}
+ggplot(nov_jump, aes(x= mm, fill = week)) + 
+  geom_density(alpha=.6) +
+  scale_x_continuous(labels = c("5am","8am","12:30pm","5pm","8pm"),
+                     breaks = c(300,480,750,1020,1200)) + 
+  labs(fill="", title="Jump Bike Nov 2018 Start Times", 
+       subtitle = "by Week") + 
+  theme_fivethirtyeight() +
+  theme(strip.background = element_rect(fill = "#FFFFFF")) +
+  facet_grid(vars(start_day_type)) + 
+  scale_fill_viridis_d(option="A")
+```
+
+**Figure 2. Weekly and Daily Ridership Patterns of JUMP Ridership in Sacramento**
+
+
+While our data unforunately does not cover a very long time period, and only two weeks can be compared directly in term sof weekday versus weekend ridership (weeks 44 and 45), this graph still shows a difference in ridership timing between the two groups. For the weekdays, there is a considerable 'hump' of ridership taking place around the peak AM commute hour of 8 AM, whereas for the weekends, ridership doesn't begin to pick up until the early afternoon. This suggests that there is a considerable portion of JUMP riders who are using the service to commute to work in the mornings. These commuters may either be riding JUMP back home or taking other forms of transit (such as bus or light rail) home in the evenings, although it is harder to percieve differences in the PM commute data because ridership during the weekends appears to be high later in the day anyway (likely due to recreational trips). The question of what portion of ridership is recreational versus for commuting is an interesting one that continues to be analyzed elsewhere, but for the purposes of this analysis, this helps us establish the presence of JUMP commuters; meaning that neighborhood characteristics of trip start points might indicate something about the characteristics of riders themselves, a key assumption in our modelling.
+
+
+##Bringing In Additional Data
+
+Key to answering our research question is bringing in additional information on socioeconomic status (SES) as well as characteristics of the built environment that might influence ridership rates. In order to bridge that information with our JUMP bike dataset, we brought in additional datasets from the Census Bureau's American Community Survey as well as parcel information from the Sacramento County Open Data Portal.
+
+
+### Census Information
+
+To bring in Census Information, we used the "tidycensus" R package to extract the following variables from the 2017 American Community Survey at the Census Tract level for both Sacramento and Yolo counties: total households, the number of households belonging to racial and ethnic groups including White, Black, Asian, and Hispanic, Median Household Income, Per Capita Income, and Poverty Rate. Merging this information with our JUMP bike dataset was performed using the 'intersect' function from the SF package, which performs the equivalent of a spatial join. Since we want to use Census variables in our regression model, the Census Tract becomes the new unit of analysis, with the number of rides both starting and ending in each tract now summed within each tract. The first of the two following maps show the percentage of each Census Tract's population under the poverty line for both Sacramento and Yolo counties, while the second maps shows a 'ridership rate' (the number of trip points divided by the tract's population) for the same tracts. Note that many tracts, particularly outside of Sacramento's urban core, did not show any ridership as they are outside of JUMP's service area.
+
+```{r Report - poverty and riderate maps, echo=FALSE}
+tmap_mode("plot")
+tm_shape(jump_tracts) + tm_polygons("ppov")
+
+```
+
+**Figure 3. Map of Poverty Rate in Sacramento and Yolo County Census Tracts, 2017 American Community Survey**
+
+
+
+```{r echo=FALSE}
+tmap_mode("plot")
+tm_shape(jump_tracts) + tm_polygons("riderate")
+
+```
+
+**Figure 4. Map of JUMP Ridership Rate (Trips/Population) in Sacramento and Yolo County Census Tracts, 2017 American Community Survey**
+
+
+
+### Parcel Information
+
+Built environment charactertistics have a logical relationship with variables such as BSS usage, as BSS usage will likely only be popular in locations with adequate infratsructure, and a minimum density of residences, businesses, and attractions within biking distance. Researchers have employed various variables to quantify the 'urbanness' of various neighborhoods. Goodmand and Handy, in their 2015 paper describing a theoretical future Sacramento bikeshare, use the number of road intersections per square mile as a proxy for 'urbanness', using the logic that older, historic urban core neighborhoods with gridded street patterns will score highly on this metric, while suburban developments and their cul-de-sac style development will not. Rather than use this metric, our team decided to look at the land use ratio of various neighborhoods to assess this sense of 'urbanness'. Our logic was that neighborhoods with a greater mix of office and retail uses with residential uses will provide the critical mix of nearby attractions that would make BSS popular in a neighborhood. 
+
+To create land use variables for each Census Tract, we obtained Sacramento County's parcel dataset from the Sacramento County Open Data Portal. Parcels are coded with various land use types, so we re-coded land use types into broad categories including residential, office, and retail. We then intersected the parcel information into our Census Tracts, creating a dataset that initially had an observation for every parcel with the matching information from the Census layer. However, this data was then aggregated by Census Tract while counting total number of parcels as well as the number of office and retail parcels, bringing our level of analysis back to the Census Tract and also letting us calculate the proportion of each Census Tract's properties that fell into those categories. The map below shows the percentage of parcels in each Census Tract in the county that were dedicated to retail usage.
+
+```{r echo=FALSE}
+tmap_mode("plot")
+tm_shape(jump_tracts) + tm_polygons("retRate")
+
+```
+
+**Figure 5. Map of Retail Concentration by Census Tract in Sacramento County**
+
+
+##Modelling Ridership
+
+Now that all three datasets were spatially merged together and represented at the Census Tract level: JUMP bike usage, neighoborhood demographics, and parcel usage, we could begin to explore the relationship between variables across these datasets and look into predictive abilities. Since our research question asks us to see if JUMP ridership is concentrated in socioeconomic enclaves, or, put differently, systematically excludes low income or minority populations, we intended to build a multivariate model that predicts ridership at the Census Tract level. If we could construct a model with some predictive power, **and** if income, poverty, or racial or ethnic variables showed statisticaly significant coefficients within our model, then we might be able to prove the presence of such a relationship. We tested a few different model specifications, but the specification with the highest predictive power was the equation as follows:
+
+**riderate = (intercept) + offrate + resRate + retRate + ppov + pwht + pasn + pblk + phisp** 
+
+
+
+
+#RESULTS
+
+This setion presents the findings of our multivariate regression model, along with test of model performance. While our model is highly predictive, the interpretation of coefficients as well as tests for common regression issues show reason for concern in interpreting the regression's results.
+
+
+##Correlation Results
+
+Our linear model shows a robust R squared value of .59, suggsting that nearly 60% of the variation in JUMP ridership by tract can be predicted using our explanatory variables. However, interestingly, only the retail concentration of the neighborhood is showing as statistically significant in the model. Regression results are presented in Table 1 below.
+
+```{r echo=FALSE}
+summ(jump_lm)
+```
+
+*Figure 6. Linear Regression Results*
+
+
+Using the results of this regression alone, it would appear that we cannot accept our hypothesis that JUMP ridership in Sacramento is related to income or minority neighborhoods. However, while this regression might be a first cut at establishing this relationship, there are a number of issues inherent in the regression which may be giving us erroneous results.
+Multicollinearity and Heteroscedasticity are two major issues that can plague simple linear regressions. Unfortunately, our model has both issues present. We present two figures that establish the presence of these issues in our regression.
+
+
+###Multicollinearity
+
+Multicollinearity refers to a case in which multiple explanatory variables are not only correlated with the dependent variable, but they are also correlated with **one another**. In these cases, it becomes difficult to attribute predictive value to any one single explanatory variable, as they are often all moving in tandem. Figure 7, below, shows a correlation matrix between our explanatory variables.
+
+
+```{r echo=FALSE}
+pairs(retRate ~ ppov + pwht + pasn + pblk + phisp, jump_tracts)
+
+```
+
+*Figure 7. Bivariate Correlation Matrix for Selected Explanatory Variables*
+
+
+This figure shows that many of our explanatory variables are highly correlated with one another. In particular, the racial and ethnic variables are highly co-linear. There also appears to be some co-linearity even between our one significant explanatory variable (retail concentration) and some of the racial and ethnic variables. 
+
+
+###Heteroscedasticity and Leverage
+
+Heteroscedasticity refers to a situation where the residuals (difference between observed values and the prediction line) are not distributed normally in respect to the dependent variable, meaning that the magnitude of the dependent variable influences the magnitude of the residuals. This can often cause erroneous model interpretations, and may be a sign of an improperly specified model. Unfortunately, by plotting our model results, we see that our model is highly heteroscedastic. There are also additonal issues including a great deal of leverage exerted by only two observations. See Figure 8 below and the discussion following the figure. 
+
 ```{r echo=FALSE}
 par(mfrow=c(2,2))
 plot(jump_lm)
 ```
 
-
-* Conclusion and discussion. Provide a summary of what you have learned about your research question along with the EDA/statistical results that support your conclusions. 
-
-* Also critique your own methods and provide suggestions for improving your analysis. Issues pertaining to the reliability and validity of your data, and appropriateness of the analysis approach should be discussed here. 
-
-* A paragraph on what you would do differently if you were able to start over with the project or what you would do next if you were going to continue work on the project should also be included.
-
-#Paper
-
-Bike Sharing Systems (BSS) have become increasingly viable options for transportation in the built environment. BSS provide bicycles to consumers across urban areas (typically in hubs called “stations”) on an as-needed basis, allowing commuters and leisure-seekers to ride for a small fee without the downsides (initial cost, maintenance, storage, etc,) of bike ownership (Rixey, 2013; Smith et al. 2015). In addition to environmental and health benefits of BSS, many programs market these systems to connect “first and last mile” commuters, connecting people to transit hubs, work, or city centers (Smith et al. 2015). A relatively recent *newcomer* to the United States, Bike Sharing Systems have grown rapidly since 2012, due in part to technology constraints of bicycles and urban infrastructure built to accommodate heavy bicycle use. Numerous technological and logistical improvements to BSS have helped current “fourth-generation” services like JUMP bikes to grow in popularity among urban populations (Smith et al. 2015).
-As the number and quality of Bike Sharing Services have increased over time, so too have concerns of inequity linked to these programs (McNeil et al 2018). Put simply, the economic and logistical prerogative to maximize profit and centralize BSS hubs has resulted in the clustering of services in and around city centers—centers that cater to a predominately white, middle- or upper-class user. While acknowledging the complex and varied role of politics, race, and class play in shaping the built environment, the scope of this project will determine whether BSS usage is linked to socio-economic enclaves. 
-
-To that end, this project closely analyzed Goodman and Handy’s 2015 report “Providing Equitable Access to Sacramento’s Bike Share System” to gain a critical framework for our data analysis. Tellingly, Goodman and Handy find that “Contemporary ridership forecasting models for bike share are based on current patterns of bicycle use, and generally assume a negative correlation between ridership and prevalence of non-white population, though these rates may be due to other factors such as poor infrastructure or blight rather than the LIM [Low Income Minority] residents themselves.” (Goodman and Handy, 2015; brackets added). The timing of the report (2015) prior to the implementation of the JUMP bikes in May of 2018 make our data set from November 2018 a good predictor of user trends, allowing for a six month adjustment/learning period. Whereas Goodman and Handy set out to “explore how system equity barriers could be removed to that all residents … could enjoy the benefits of bike share” this report sets out to analyze the correlation between socio-economic status (ses) and JUMP bike ridership to see if matches with industry trends (Goodman and Handy, 2015). Our null hypothesis is that JUMP bike users in Sacramento WILL/ WILL NOT conform to the general trend that favors users from higher socio-economic enclaves
+*Figure 8. Linear Regression Model - Residules*
 
 
-Paper Guidelines
-Your final paper should be much the same format as a peer-reviewed journal paper. Typically final papers run 15-18 pages including tables and figures (single-spaced). If you can get everything across in 10 solid pages, that's great. The general format of the final product should follow this outline:
-* Brief introduction and overview of the literature you have reviewed. I do not expect you to have a deep knowledge of the literature, but you should have identified some driving questions that emerge from the literature. State your objectives/hypotheses clearly at the end of the introduction/lit review
+The top two graphs in Figure 8 display our model's heteroscedasticity. Looking at the unstandardized residuals in the top-left graph, there is a noticable pattern of increasing distance from the prediction line as the value of the dependent variable increases. In the standardized residuals plot at top-right, the same pattern can be seen: the magnitude of the residuals increases across quantiles of our input data. Finally, the graph at the bottom-left shows how much 'leverage' each observation has over the model overall. Observations that fall across the dotted lines from the prediction line indicate observations that have a disproportionately large effect on the model specification. Unfortunately, our data has several observations across in those zones, especially the high-ridership *Observation 9*, which happens to be the Sacramento County's extremely high ridership Census Tract 11.01, which covers most of the downtown area.
 
-* Methods. Give a clear and detailed summary of your data and methods
-•	Got census data (2017 AM COM SURV) and jump bike data (nov 2018) and	 Land use data from Sac county (2018ish?)
-•	Merged datasets together
-•	Stats of Jmp bike data for trends by time of day and week day weekend use
-•	Saw patterns that implicated commuter use
-•	 Use trip locations (start and end) as proxy for the user, layered in neighborhood census data to code
-•	Built mult regression model to test ridership against numerous variables (including hypothesis for LIM folks)
-* Results. Describe your results. Make sure you label all tables and figures.
-•	On separate part (with Tyler) Figures
-o	Graph across time
-o	Correlation table
-o	Maps of variables 
-	Ride rate
-	Retail rate
-	Poverty/ses
-o	Heat map 
-o	Regression output
-o	Plot of residuals
-•	Result of our regression shows that there is no link between LIM status and ridership (within the 2 week period)
-
-* Conclusion and discussion. Provide a summary of what you have learned about your research question along with the Exploratory Data Analysis/statistical results that support your conclusions. 
-•	Understood temporality
-•	Suggested we could talk about commute patterns 
-o	Learned using tract demograpics as a proxy for ridership does not establish a correlation between rdrship and demographic variables
-Also critique your own methods and provide suggestions for improving your analysis. Issues pertaining to the reliability and validity of your data, and appropriateness of the analysis approach should be discussed here.
-•	More time on dependent variables for nghbrhd characteristics
-•	More stat testing more than OLS regression
-o	Plus gwr/ running tests for multicollinearity heteroscedasticity 
- A paragraph on what you would do differently if you were able to start over with the project or what you would do next if you were going to continue work on the project should also be included.
-We need a ridership level survey
-•	GET MOER DATA.
-•	Conduct ridership survey (cant make the overlying assumptions that we did in this class) 
-•	Work with a data magician (statistician) 
+Taking all of these factors together, our team believes that we must exercise extreme care when interpreting or applying the results of our regression.
 
 
 
-REFERENCES:
+#CONCLUSION AND DISCUSSION
 
-Goodman, B and Handy, S. 2015. Providing Equitable Access to Sacramento’s Bike Share System. U.C. Davis Institute of Transportation Studies.
+Ultimately, our analysis did not show a predictive relationship between neighborhood-level JUMP ridership and minority or low income populations in the neighborhood. However, our research team believes that this limited finding, while interesting, far from disproves our original hypothesis. This section of the report reviews some of our key findings, before critiquing our methods and offering thoughts for future researchers to continue this work.
+
+
+##Exploratory Data Analysis
+
+As described at the beginning of the methods section, our analysis of the JUMP bike ridership data at a minimum helped us understand broadly the spatiotemporal charachteristics of system ridership over our two-week analysis window. Plotting the spatial location of trips shed light on the intense clustering of JUMP bike ridership in Downtown Sacramento and adjacent neighborhoods, and the relative lack of ridership nearly anywhere else in the region. Temporal analysis also helped us understand not only how JUMP bike usage is spread out across a typical day, but how that daily spread differs between weekends and weekdays. The presence of a small AM peak during the weekdays suggests that some riders are, as planning organizations hoped, using the JUMP service to replace commute trips as opposed to simply using the service for recreational trips. 
+
+
+##Points of Critique
+
+While our analysis accomplished much in the exploratory phase, and also showed interesting correlations in the model we ultimately assembled, there are many ways in which our team is able to reflect on flaws and criticisms with our data and methodology. These include the limited data sample used in the analysis, the likely presence of many confounding variables in our model, and a need to employ more advanced regression techniques that are more appropriate for our spatially autocorrelated data. We include these criticisms not to say that our work was without merit, but to point toward a better direction for future work.
+
+
+###Limited Temporal Sample
+One major flaw in our analysis is that the data shared with team by the Institute for Transportation Studies at UC Davis only covers a single two-week span in November. The limited period of the sample prevented us from asking larger questions about seasonality and the effects of precipitation or air quality on ridership, for instance. It is also possible that the characteristics of the period we analyzed were different from the typical week of ridership in ways that affected our model: perhaps, for instance, cold temperatures and high winds experienced throughout the period lead to overall lower ridership throughout the system. Future analyses should be based on data spanning a wider time period, preferable a year or more.
+
+
+###Confounding Variables
+Our analysis team also readily recognizes that there are likely many counfounding variables that are influencing our regression model. Firstly, the November 1-15, 2018 time period actually includes a major atmospheric event. Beginning on November 8, and intensifying rapidly by the 9th and 10th, the entire Sacramento region became inundated with smoke from the Camp Fire, which was burning 100 miles to the north in Butte County, California. Visibility and Air Quality Index figures during this time period met or exceeded record highs for multiple days, and many institutions including UC Davis, Sacramento State University, and the Los Rios Community College District (all major employers and educators of regional students) shut their doors during this week due to poor air quality. This air quality impact is picked up somewhat in the temporal analysis that we performed, but unfortunately since we only have a week of 'normal' observations followed by a week of 'smokey' observations, it's difficult to isolate the effect of the air quality from other variables. Our regression model itself also likely includes confounding variables. While we used the land use ratio in each Census Tract as a proxy for 'urbannness' and richness of destinations attractive to JUMP bike users, we might have also used metrics such as intersection density, population or employment density, or even included information such as bike lanes per square mile or similar metrics that attempt to quantify levels of bicycle friendliness. While our analysis sidestepped some of these issues due to the complex spatial processing involved in computing these variables, future studies should consider such variables in an effort to build a more robust model. 
+
+
+###More Advanced Regression Techniques
+Our team is also aware that our familiarity with statistics and regression techniques may be inadequate to addressing our data. The analyses of multicollinearity and heteroscedasticity in our data shown in the results section show that we may have issues in our model specification, including modelling relationships as linear when they may truly be logarithmic or quadratic. Beyond specification issues, however, we believe this data years to be analyzed using more spatially-explicit regression techniques. Many variables in our dataset appear to be highly **spatially** autocorrleated (following from Tobler's first and only law of Geography: that things in close proximity tend to be more similar than things farther apart), so the predictive power of our model is likely to be highly overstated. Our team experimented with techniques aimed at addressing this issue, such as performing a Geographically-Weighted Regression that seeks to adjust each observation's leverage on the model according to how correlated the observation is with its near neighbors, however, we did not trust our interpretations of the GWR output enough to have confidence in sharing them in this report. We encourage future researchers (perhaps more enlightened versions of ourselves after becoming more acquainted with spatial statistics) to approach this dataset using GWR or other spatially-explicit regression models.
+
+
+###The Limitations of Neighborhood-Level Data
+A final critique of our analysis gets to the very core of our premise: that we might be able to prove or disprove a relationship between BSS ridership and low-income or minority status through using only low-income or minority status **measured at the neighborhood level**. This method makes a big assumption in suggesting that the neighborhood characteristics of the Census Tract in which one unlocks a JUMP bike has a relationship with the demographic characteristics of the rider herself. Unfortunately, while we might reasonably be able to suggest such a relationship for AM commute trips (riders are picking up JUMP bikes close to their residences), such trips were not the majority or even a very large share overall of total JUMP bike trips. It is safe to assume that many JUMP bike trips, especially in the Downtown and Midtown areas, are starting and ending in Census Tracts in which the rider does not live, but is merely visiting for work, school, or entertainment. The only way to address this issue head on would be to redesign a study that uses **rider-level demographic data** as opposed to neighborhood-level Census information. Such data would need to be collected and shared by JUMP itself, or collected via in-person surveys of riders themselves. Thankfully, such a study is currently ongoing by the Institute for Transportation Studies here at UC Davis. Rider-level information might prove much more helpful in testing our hypothesis.
+
+
+
+###What We Would Do Next Time
+If our team could begin again with our analysis, there are many things we might do differently. As a start, we might have asked for a larger temporal window of data, particularly during a period unaffected by major weather or air quality events. We might also have spent more time learning about the spatial capabilities of various R packages, so that we could have computed and tested a variety of alternate built-environment measures using other spatial datasets such as presence of bike infrastructure. In the same vein, we should have also spent more time learning about tools such as Geographically-Weighted Regression that might help us specify a better multivariate model that is less affected by issues of spatial autocorrelation. Finally, if we had the time and resources, we might conduct our own survey of JUMP riders in an effort to use real rider-level information rather than using Census-furnished neighborhood-level information as a proxy for low-income or minority status of riders.
+
+While our analysis did not show a link between low income and minority neighborhoods and lower rates of JUMP ridership, we want to be very clear that we believe much more additional analysis must be performed before our hypothesis is answered conclusively. However, we learned much about this data through our exploratory data analysis, each of us learned a great deal not just about coding in R but also about a variety of packages for dealing with spatial information in the platform, and, finally, we believe we took one step in the direction of answering our research question. We hope that others can build on what we have done to continue to analyze this important equity issue in our region.
+
+
+
+
+#REFERENCES
+
+Goodman, B and Handy, S. 2015. Providing Equitable Access to Sacramento's Bike Share System. U.C. Davis Institute of Transportation Studies.
 
 Rixey, A. 2013. Station-Level Forecasting of Bike Sharing Ridership: Station Network Effects in Three U.S. Systems. TRB 2013 Annual Meeting.
 
